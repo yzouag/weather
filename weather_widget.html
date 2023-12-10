@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Weather Widget</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="weather-icons/css/weather-icons.css">
+</head>
+
+<body>
+    <noscript>
+        Current Weather Conditions Unavailable.
+    </noscript>
+    <weather-widget></weather-widget>
+
+    <script type="module">
+        class WeatherWidget extends HTMLElement {
+            constructor() {
+                super();
+
+                this.innerHTML = `
+                    <style>
+                        p {
+                            font-size: 1.2rem;
+                            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        }
+                    </style>
+                    <h2>Current Weather</h2>
+                    <p id="weather-info"></p>
+                `;
+
+                this.fetchCurrentWeather();
+            }
+
+            fetchCurrentWeather() {
+                fetch("https://api.weather.gov/gridpoints/SGX/53,20/forecast")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("api rejected");
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    console.log(data);
+                    const current_weather = data.properties.periods[0];
+                    const temperature = current_weather.temperature;
+                    const unit = current_weather.temperatureUnit;
+                    const description = current_weather.shortForecast;
+                    const weather_icon = this.getWeatherIcon(description, current_weather.isDaytime);
+                    document.getElementById("weather-info").innerHTML = `${weather_icon} ${description} ${temperature}°${unit}`;
+                })
+                .catch(err => {
+                    console.log(err);
+                    document.getElementById("weather-info").textContent = "Fail to get the weather data";
+                });
+            }
+
+            getWeatherIcon(description, isDaytime) {
+                const des = description.toLowerCase();
+                if (des.includes('sunny')) {
+                    return '<i class="wi wi-day-sunny"></i>';
+                } else if (des.includes('clear')) {
+                    return '<i class="wi wi-night-clear"></i>';
+                } else if (des.includes('cloudy') && isDaytime) {
+                    return '<i class="wi wi-day-cloudy"></i>';
+                } else if (des.includes('cloudy') && !isDaytime) {
+                    return '<i class="wi wi-night-alt-cloudy"></i>';
+                } else if (des.includes('rain')) {
+                    return '<i class="wi wi-rain"></i>';
+                } else if (des.includes('fog')) {
+                    return '<i class="wi wi-fog"></i>';
+                } else if (des.includes('snow')) {
+                    return '<i class="wi wi-snow"></i>';
+                } else if (des.includes('thunder')) {
+                    return '<i class="wi wi-thunderstorm"></i>';
+                } else {
+                    return '<i class="wi wi-cloud"></i>';
+                }
+            }
+        }
+
+        customElements.define("weather-widget", WeatherWidget);
+    </script>
+</body>
+
+</html>
